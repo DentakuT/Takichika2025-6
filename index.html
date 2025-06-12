@@ -102,7 +102,7 @@
 
 <header class="header">
     <h1>滝地下麻雀順位表 (2025年6月)</h1>
-    <p id="update-info">情報更新日: <span id="last-updated">取得中...</span></p>
+    <p id="update-info">情報更新日: <span id="last-updated"></span></p>
 </header>
 
 <main class="main-content">
@@ -122,14 +122,95 @@
     </div>
 </main>
 
-<footer class="footer">
-    <p>&copy; 2025 滝地下麻雀部</p>
-</footer>
 
 <script>
 // ページの読み込みが完了したときに実行
 document.addEventListener('DOMContentLoaded', () => {
-    // 更新日を表示
+    // 現在の日付を「情報更新日」として表示
+    document.getElementById('last-updated').textContent = new Date().toLocaleDateString('ja-JP', {
+        year: 'numeric', month: 'long', day: 'numeric'
+    });
+    
+    // 順位表を生成
+    generateRankings();
+});
+
+/**
+ * データから順位表を作成する関数
+ */
+function generateRankings() {
+    
+    // ★★★ データの更新はここで行います ★★★
+    // data.txt の内容を、以下のバッククォート（`）の間に貼り付けてください。
+    // 形式: 名前:前回レート:今回レート
+    const rawData = `
+プレイヤーC:1600:1650
+プレイヤーA:1520:1550
+プレイヤーB:1500:1480
+プレイヤーD:1400:1400
+    `;
+    // ★★★ データの更新はここまで ★★★
+
+    const tableBody = document.getElementById("rankings-body");
+    tableBody.innerHTML = ''; // テーブルを一旦空にする
+
     try {
-        const lastModified = new Date(document.lastModified);
-        document.getElementById('last-updated').textContent = lastModified.toLocaleDateString('ja
+        const players = rawData
+            .trim()
+            .split('\n')
+            .filter(line => line.trim() !== '') // 空行を無視する
+            .map(line => {
+                const parts = line.split(':');
+                if (parts.length !== 3) return null; 
+
+                const name = parts[0].trim();
+                const previousRate = parseInt(parts[1], 10);
+                const currentRate = parseInt(parts[2], 10);
+
+                if (isNaN(previousRate) || isNaN(currentRate)) return null;
+
+                return {
+                    name: name,
+                    rate: currentRate,
+                    change: currentRate - previousRate
+                };
+            })
+            .filter(player => player !== null);
+
+        if (players.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">表示するデータがありません。</td></tr>';
+            return;
+        }
+
+        players.sort((a, b) => b.rate - a.rate);
+
+        players.forEach((player, index) => {
+            const rank = index + 1;
+            const row = tableBody.insertRow();
+            
+            row.insertCell(0).textContent = rank;
+            row.insertCell(1).textContent = player.name;
+            row.insertCell(2).textContent = player.rate;
+            
+            const changeCell = row.insertCell(3);
+            let changeText = player.change;
+            if (player.change > 0) {
+                changeText = `+${player.change}`;
+                changeCell.className = 'rate-plus';
+            } else if (player.change < 0) {
+                changeCell.className = 'rate-minus';
+            } else {
+                changeCell.className = 'rate-zero';
+            }
+            changeCell.textContent = changeText;
+        });
+
+    } catch (error) {
+        console.error("順位表の生成中にエラーが発生しました:", error);
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">エラーが発生しました。データ形式を確認してください。</td></tr>`;
+    }
+}
+</script>
+
+</body>
+</html>
