@@ -3,86 +3,214 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>滝地下麻雀順位表(2025年6月)</title>
+<title>滝地下麻雀順位表 (2025年6月)</title>
 <style>
-table {
-width: 50%;
-border-collapse: collapse;
-margin: 20px auto;
-}
-th, td {
-border: 1px solid black;
-padding: 8px;
-text-align: left;
-}
-th {
-background-color: #f2f2f2;
-}
+    /* 全体のスタイル */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        background-color: #f9f9f9;
+        color: #333;
+        margin: 0;
+    }
+
+    /* ヘッダー */
+    .header {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        padding: 1rem;
+        text-align: center;
+    }
+    .header h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+    .header p {
+        margin: 0.5rem 0 0;
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    /* テーブルのコンテナ（レスポンシブ対応） */
+    .table-container {
+        overflow-x: auto; /* 画面が狭い時に横スクロールを可能にする */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 8px;
+    }
+
+    /* テーブル */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #fff;
+    }
+
+    th, td {
+        border-bottom: 1px solid #ddd;
+        padding: 12px 15px;
+        text-align: left;
+    }
+
+    thead th {
+        background-color: #34495e;
+        color: #ecf0f1;
+        font-weight: bold;
+    }
+
+    /* テーブルの行を交互に色付け */
+    tbody tr:nth-of-type(even) {
+        background-color: #f2f2f2;
+    }
+
+    /* ホバー時にハイライト */
+    tbody tr:hover {
+        background-color: #e0e0e0;
+    }
+    
+    /* 増減のスタイル */
+    .rate-plus {
+        color: #27ae60; /* 緑 */
+        font-weight: bold;
+    }
+    .rate-minus {
+        color: #c0392b; /* 赤 */
+        font-weight: bold;
+    }
+    .rate-zero {
+        color: #7f8c8d; /* グレー */
+    }
+
+    /* フッター */
+    .footer {
+        text-align: center;
+        padding: 1rem;
+        margin-top: 2rem;
+        font-size: 0.8rem;
+        color: #777;
+    }
+
 </style>
 </head>
 <body>
-<h1>滝地下麻雀順位表 (2025年6月)</h1>
-<script type="text/javascript">
-var day = new Date(document.lastModified);
-var y = day.getFullYear();
-var m = day.getMonth() + 1;
-var d = day.getDate();
 
-var week = new Array("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat");
-var w = week[day.getDay()];
+<header class="header">
+    <h1>滝地下麻雀順位表 (2025年6月)</h1>
+    <p id="update-info">情報更新日: <span id="last-updated">取得中...</span></p>
+</header>
 
-if (m < 10) m = "0" + m;            // 数値が1～9の時には
-if (d < 10) d = "0" + d;            // 0 を追加してそろえる
+<main class="main-content">
+    <div class="table-container">
+        <table id="rankings">
+            <thead>
+                <tr>
+                    <th>順位</th>
+                    <th>名前</th>
+                    <th>レート</th>
+                    <th>増減</th>
+                </tr>
+            </thead>
+            <tbody id="rankings-body">
+                </tbody>
+        </table>
+    </div>
+</main>
 
-document.write("更新日: " + y + "/" + m + "/" + d);
-</script>
-<table id="rankings">
-<tr>
-<th>順位</th>
-<th>名前</th>
-<th>レート</th>
-<th>増減</th>
-</tr>
-</table>
+<footer class="footer">
+    <p>&copy; 2025 滝地下麻雀部</p>
+</footer>
 
 <script>
-// データを取得して順位表を作成する関数
-function generateRankings() {
-    // データファイルのURL
-    var dataFile = "data.txt";
-
-    // 順位表のテーブル要素
-    var table = document.getElementById("rankings");
-
-    // データを取得
-    fetch(dataFile)
-    .then(response => response.text())
-    .then(data => {
-        // データを改行で分割し、各行を処理
-        data.trim().split('\n').map(line => {
-            var [name, zenkai, konkai] = line.split(':');
-            let rate = parseInt(konkai);
-            let gosa = parseInt(zenkai);
-            return { name, rate, gosa: rate - gosa };
-        }).sort((a, b) => b.rate - a.rate) // レートで降順ソート
-        .forEach((item, index) => {
-            var rank = index + 1;
-
-            // テーブルに行を追加
-            var row = table.insertRow();
-            row.insertCell(0).textContent = rank;
-            row.insertCell(1).textContent = item.name;
-            row.insertCell(2).textContent = item.rate;
-            
-            // gosaの値が正なら + を追加
-            let gosaDisplay = item.gosa > 0 ? "+" + item.gosa : item.gosa;
-            row.insertCell(3).textContent = gosaDisplay;
+// ページの読み込みが完了したときに実行
+document.addEventListener('DOMContentLoaded', () => {
+    // 更新日を表示
+    // document.lastModifiedはサーバー環境によって挙動が異なる場合があるため、
+    // より信頼性の高い方法として、ファイルの日付を手動で記載するか、
+    // サーバーサイドで生成することを推奨しますが、ここでは元の機能を活かします。
+    try {
+        const lastModified = new Date(document.lastModified);
+        document.getElementById('last-updated').textContent = lastModified.toLocaleDateString('ja-JP', {
+            year: 'numeric', month: 'long', day: 'numeric'
         });
-    });
-}
+    } catch (e) {
+        document.getElementById('last-updated').textContent = '不明';
+    }
+    
+    // 順位表を生成
+    generateRankings();
+});
 
-// ページの読み込みが完了したら順位表を生成
-document.addEventListener('DOMContentLoaded', generateRankings);
+// データを非同期で取得して順位表を作成する関数
+async function generateRankings() {
+    const tableBody = document.getElementById("rankings-body");
+    const dataFile = "data.txt";
+
+    // 読み込み中の表示
+    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">読み込み中...</td></tr>';
+
+    try {
+        const response = await fetch(dataFile);
+        // fetchが失敗した場合（ファイルが存在しないなど）にエラーを投げる
+        if (!response.ok) {
+            throw new Error(`ファイルが見つかりません (HTTP ${response.status})`);
+        }
+        const data = await response.text();
+        
+        // 取得したデータを処理
+        const players = data.trim().split('\n').map(line => {
+            const [name, zenkai, konkai] = line.split(':');
+            const rate = parseInt(konkai, 10);
+            const gosa = parseInt(zenkai, 10);
+            return { name, rate, change: rate - gosa };
+        });
+
+        // レートで降順にソート
+        players.sort((a, b) => b.rate - a.rate);
+
+        // 読み込み中表示をクリア
+        tableBody.innerHTML = '';
+        
+        // プレーヤーデータが空の場合の表示
+        if (players.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">表示するデータがありません。</td></tr>';
+            return;
+        }
+
+        // テーブルに行を追加
+        players.forEach((player, index) => {
+            const rank = index + 1;
+            const row = tableBody.insertRow();
+            
+            row.insertCell(0).textContent = rank;
+            row.insertCell(1).textContent = player.name;
+            row.insertCell(2).textContent = player.rate;
+            
+            const changeCell = row.insertCell(3);
+            let changeText = player.change;
+            if (player.change > 0) {
+                changeText = `+${player.change}`;
+                changeCell.className = 'rate-plus';
+            } else if (player.change < 0) {
+                changeCell.className = 'rate-minus';
+            } else {
+                changeCell.className = 'rate-zero';
+            }
+            changeCell.textContent = changeText;
+        });
+
+    } catch (error) {
+        console.error("順位表の生成中にエラーが発生しました:", error);
+        // エラーメッセージをテーブルに表示
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">エラー: ${error.message}</td></tr>`;
+    }
+}
 </script>
+
 </body>
 </html>
